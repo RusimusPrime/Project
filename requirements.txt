@@ -1,0 +1,6 @@
+keyboard==0.13.5
+opencv_python==4.10.0.84
+Pillow==11.0.0
+pyboy==2.4.1
+PyQt6==6.7.1
+PyQt6_sip==13.8.0

@@ -2,21 +2,22 @@ import os
 import csv
 import sys
 import sqlite3
+import webbrowser
 
 import cv2
 import keyboard
 
-from PyQt6.QtCore import Qt
-from pyboy import PyBoy
 from PIL import Image
-from PyQt6 import QtCore, QtWidgets
+from pyboy import PyBoy
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QButtonGroup, QSlider, QPushButton, QDialog, \
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QButtonGroup, QSlider, QPushButton, QMessageBox, \
     QInputDialog
 
-from set import SettingWidget
 from save import SaveWidget
 from load import LoadWidget
+from set import SettingWidget
 
 
 def game(name):
@@ -75,6 +76,14 @@ class MyWidget(QMainWindow):
         self.DeleteGame.setIcon(QIcon("data/icons/delate.png"))  # Укажите путь к вашему изображению
         self.DeleteGame.setIconSize(self.DeleteGame.size())
         self.DeleteGame.clicked.connect(self.delate)
+
+        self.newgame = QtWidgets.QPushButton(self)
+        self.newgame.setGeometry(QtCore.QRect(10, 160, 40, 40))
+        self.newgame.raise_()
+        self.newgame.show()
+        self.newgame.setIcon(QIcon("data/icons/game.png"))  # Укажите путь к вашему изображению
+        self.newgame.setIconSize(self.newgame.size())
+        self.newgame.clicked.connect(self.open_web)
 
         self.SecondColor.raise_()
         self.MainColor.raise_()
@@ -172,6 +181,15 @@ class MyWidget(QMainWindow):
         self.__init__()
         self.show()
 
+    def open_web(self):
+        msg = QMessageBox(text="Желаете ли вы перейти на сайт, чтобы скачать новые игры?", parent=self)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok |
+                               QMessageBox.StandardButton.Cancel)
+        ret = msg.exec()
+        if ret == 1024:
+            webbrowser.open("https://www.emugames.net/gameboy-roms/", new=2)
+
     def delate(self):
         text, ok = QInputDialog.getText(self, 'Input Dialog',
                                         'Введите номер игры, которую хотите удалить:')
@@ -236,21 +254,23 @@ class MyWidget(QMainWindow):
 
     def choose_rom(self):
         file_name = QFileDialog.getOpenFileName(self, "Выбрать файл", "")[0]
-        con = sqlite3.connect("data/data.sqlite")
-        con.execute("""INSERT INTO roms (id, name, path) VALUES(?, ?, ?)""", (
-            self.start_slider() + 1, file_name.split("/")[-1],
-            f"data/games/{file_name.split("/")[-1]}"))
-        os.replace(file_name, f"data/games/{file_name.split("/")[-1]}")
-        con.commit()
+        if file_name != '':
+            con = sqlite3.connect("data/data.sqlite")
+            con.execute("""INSERT INTO roms (id, name, path) VALUES(?, ?, ?)""", (
+                self.start_slider() + 1, file_name.split("/")[-1],
+                f"data/games/{file_name.split("/")[-1]}"))
+            os.replace(file_name, f"data/games/{file_name.split("/")[-1]}")
+            con.commit()
 
     def choose_cover(self, n):
         file_name = QFileDialog.getOpenFileName(self, "Выбрать картинку", "")[0]
-        img = Image.open(file_name)
-        img.save(f"data/covers/{file_name.split("/")[-1]}")
-        con = sqlite3.connect("data/data.sqlite")
-        con.execute("""INSERT INTO covers (id, path) VALUES(?, ?)""",
-                    (n, f"data/covers/{file_name.split("/")[-1]}"))
-        con.commit()
+        if file_name != '':
+            img = Image.open(file_name)
+            img.save(f"data/covers/{file_name.split("/")[-1]}")
+            con = sqlite3.connect("data/data.sqlite")
+            con.execute("""INSERT INTO covers (id, path) VALUES(?, ?)""",
+                        (n, f"data/covers/{file_name.split("/")[-1]}"))
+            con.commit()
 
     def action_rom(self, path, n):
         return lambda: (game(path), self.spisok_states.insert(0, n), self.action_save_states(self.spisok_states))

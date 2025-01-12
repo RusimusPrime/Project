@@ -193,8 +193,7 @@ class MyWidget(QMainWindow):
     def delate(self):
         text, ok = QInputDialog.getText(self, 'Input Dialog',
                                         'Введите номер игры, которую хотите удалить:')
-        print(text, ok)
-        if ok:
+        if ok and self.start_slider() > 4:
             con = sqlite3.connect("data/data.sqlite")
             cur = con.cursor()
             cur.execute(
@@ -202,10 +201,15 @@ class MyWidget(QMainWindow):
             cur.execute(
                 """DELETE from covers WHERE id = ?""", (text,))
             con.commit()
+            for i in range(self.spisok_states.count(text)):
+                self.spisok_states.remove(text)
+            self.action_save_states(self.spisok_states)
+            spisok = self.data()
+            for i in range(len(spisok)):
+                cur.execute('''UPDATE roms SET id = ? WHERE id = ?''', (i + 1, spisok[i][0],))
+                cur.execute('''UPDATE covers SET id = ? WHERE id = ?''', (i + 1, spisok[i][0],))
+            con.commit()
             con.close()
-            self.close()
-            self.__init__()
-            self.show()
 
     def action_color(self):
         with open("data/csv files/settings.csv", encoding="utf8") as csvfile:
